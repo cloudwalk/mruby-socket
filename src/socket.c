@@ -105,7 +105,7 @@ mrb_addrinfo_getaddrinfo(mrb_state *mrb, mrb_value klass)
   mrb_value ai, ary, family, lastai, nodename, protocol, sa, service, socktype;
   mrb_int flags;
   int arena_idx, error;
-  const char *servname = NULL;
+  const char *hostname = NULL, *servname = NULL;
 
   ary = mrb_ary_new(mrb);
   arena_idx = mrb_gc_arena_save(mrb);  /* ary must be on arena! */
@@ -115,11 +115,9 @@ mrb_addrinfo_getaddrinfo(mrb_state *mrb, mrb_value klass)
   mrb_get_args(mrb, "oo|oooi", &nodename, &service, &family, &socktype, &protocol, &flags);
 
   if (mrb_string_p(nodename)) {
-    if(strncmp(RSTRING_PTR(nodename), "switch.cloudwalk.io", 19) == 0)
-      OsNetDns("switch.cloudwalk.io", &hostname, 5000);
-    else
-      OsNetDns("switch-staging.cloudwalk.io", &hostname, 5000);
+    hostname = mrb_str_to_cstr(mrb, nodename);
   } else if (mrb_nil_p(nodename)) {
+    hostname = NULL;
   } else {
     mrb_raise(mrb, E_TYPE_ERROR, "nodename must be String or nil");
   }
@@ -151,7 +149,7 @@ mrb_addrinfo_getaddrinfo(mrb_state *mrb, mrb_value klass)
     mrb_cv_set(mrb, klass, mrb_intern_lit(mrb, "_lastai"), mrb_nil_value());
   }
 
-  error = getaddrinfo((const char *)&hostname, servname, &hints, &res0);
+  error = getaddrinfo(hostname, servname, &hints, &res0);
   if (error) {
     mrb_raisef(mrb, E_SOCKET_ERROR, "getaddrinfo: %S", mrb_str_new_cstr(mrb, gai_strerror(error)));
   }
