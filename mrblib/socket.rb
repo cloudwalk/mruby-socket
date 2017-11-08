@@ -232,18 +232,23 @@ class TCPSocket
       super(host, service)
     else
       s = nil
-      e = SocketError
+      e = nil
+      ret = false
       Addrinfo.foreach(host, service) { |ai|
         begin
+          next if ret
           s = Socket._socket(ai.afamily, Socket::SOCK_STREAM, 0)
           Socket._connect(s, ai.to_sockaddr)
           super(s, "r+")
+          ret = true
+          e = nil
+          next
           return
         rescue => e0
           e = e0
         end
       }
-      raise e
+      raise e if e
     end
   end
 
